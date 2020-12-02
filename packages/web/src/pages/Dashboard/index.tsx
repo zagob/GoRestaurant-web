@@ -30,7 +30,28 @@ const Dashboard: React.FC = () => {
 
   const [searchValue, setSearchValue] = useState('');
 
-  useEffect(() => {
+//   useEffect(() => {
+//     async function loadFoods(): Promise<void> {
+//         const response = await api.get('/foods', {
+//             params: {
+//                 name_like: searchValue,
+//             }
+//         })
+        
+//         setFoods(
+//             response.data.map((food: Food) => ({
+//                 ...food,
+//             }))
+//         )
+//     }
+
+//     loadFoods();
+//   }, [searchValue])
+
+    useEffect(() => {
+        loadFoods()
+    }, [])
+
     async function loadFoods(): Promise<void> {
         const response = await api.get('/foods', {
             params: {
@@ -46,7 +67,6 @@ const Dashboard: React.FC = () => {
     }
 
     // loadFoods();
-  }, [searchValue])
 
   
   return (
@@ -59,7 +79,7 @@ const Dashboard: React.FC = () => {
                 onChange={(e) => setSearchValue(e.target.value)}
               />
               <button
-                onClick={loadFoods()}
+                onClick={loadFoods}
               >Pesquiar</button>
           </Header>
 
