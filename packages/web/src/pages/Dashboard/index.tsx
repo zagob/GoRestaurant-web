@@ -43,15 +43,9 @@ const Dashboard: React.FC = () => {
                 ...food,
             }))
         )
-
-        const results = response.data.filter((food: string) => {
-
-            food.toLowerCase().includes(searchValue)
-        });
-          setSearchValue(results);
     }
 
-    loadFoods();
+    // loadFoods();
   }, [searchValue])
 
   
@@ -62,8 +56,11 @@ const Dashboard: React.FC = () => {
                 type="text"
                 placeholder="o que deseja?"
                 value={searchValue}
-                // onChange={(e) => setSearchValue(e.target.value)}
+                onChange={(e) => setSearchValue(e.target.value)}
               />
+              <button
+                onClick={loadFoods()}
+              >Pesquiar</button>
           </Header>
 
           <Main>
