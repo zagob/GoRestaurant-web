@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
-// import SearchField from 'react-search-field';
+import { FaTrash, FaSearch, FaEdit } from 'react-icons/fa';
+
+import Menu from '../../comp/Header';
 
 import { 
     Container,
@@ -15,38 +17,28 @@ import {
 } from './styles';
 
 import api from '../../services/api';
+import formatValue from '../../utils/formatValue';
+import HeaderMenu from '../../comp/HeaderMenu';
+import ModalAddFood from '../../comp/ModalAddFood';
+import { FiPlusSquare } from 'react-icons/fi';
+import ModalEditFood from '../../comp/ModalEditFood';
 
-interface Food {
+interface IFoodPlate {
     id: number;
     name: string;
     description: string;
     price: number;
     image_url: string;
-    thumbnail_url: string;
+    formattedPrice: string;
 }
 
 const Dashboard: React.FC = () => {
-  const [foods, setFoods] = useState<Food[]>([]);
+  const [foods, setFoods] = useState<IFoodPlate[]>([]);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingFood, setEditingFood] = useState<IFoodPlate>({} as IFoodPlate);
+  const [editModalOpen, setEditModalOpen] = useState(false);
 
   const [searchValue, setSearchValue] = useState('');
-
-//   useEffect(() => {
-//     async function loadFoods(): Promise<void> {
-//         const response = await api.get('/foods', {
-//             params: {
-//                 name_like: searchValue,
-//             }
-//         })
-        
-//         setFoods(
-//             response.data.map((food: Food) => ({
-//                 ...food,
-//             }))
-//         )
-//     }
-
-//     loadFoods();
-//   }, [searchValue])
 
     useEffect(() => {
         loadFoods()
@@ -60,31 +52,112 @@ const Dashboard: React.FC = () => {
         })
         
         setFoods(
-            response.data.map((food: Food) => ({
-                ...food,
+            response.data.map((mappedfood: IFoodPlate) => ({
+                ...mappedfood,
+                price: formatValue(mappedfood.price),
             }))
         )
     }
 
     // loadFoods();
 
-  
+    async function handleDeleteFood(id: number): Promise<void> {
+        try {
+          await api.delete(`/foods/${id}`);
+    
+          setFoods(foods.filter(food => food.id !== id));
+        } catch (err) {
+          console.log(err)
+        }
+      }
+
+    async function handleAddFood(food: Omit<IFoodPlate, 'id' | 'formattedPrice'>): Promise<void> {
+        try {
+          const response = await api.post('/foods', {
+            ...food,
+          });
+    
+          setFoods([...foods, response.data]);
+        } catch (err) {
+          console.log(err);
+        }
+      }
+
+      async function handleUpdateFood (food: Omit<IFoodPlate, 'id' | 'formattedPrice'>): Promise<void> {
+        try {
+          const response = await api.put(`/foods/${editingFood.id}`, {
+            ...editingFood,
+            ...food,
+          });
+
+          setFoods(
+            foods.map(mappedFood =>
+              mappedFood.id === editingFood.id ? { ...response.data } : mappedFood,
+            )
+          )
+        } catch (err) {
+          alert('err')
+        }
+      }
+
+    // Atualizar
+    function toggleEditModal(): void {
+      setEditModalOpen(!editModalOpen)
+    }
+
+    function handleEditFood(food: IFoodPlate): void {
+      setEditingFood(food);
+      toggleEditModal();
+    }
+
+    // Adicionar
+    function toggleModal(): void {
+        setModalOpen(!modalOpen);
+    }
   return (
       <Container>
+          {/* <Menu /> */}
+          {/* <HeaderMenu          
+            openModal={toggleModal} 
+          /> */}
+          <ModalAddFood
+            isOpen={modalOpen}
+            setIsOpen={toggleModal}
+            handleAddFood={handleAddFood}
+          />
+
+          <ModalEditFood 
+            isOpen={editModalOpen}
+            setIsOpen={toggleEditModal}
+            editingFood={editingFood}
+            handleUpdateFood={handleUpdateFood}
+          />
           <Header>
-              <input
-                type="text"
-                placeholder="o que deseja?"
+            <div className="search">
+              <input 
+                type="text" 
+                placeholder="o que deseja"
                 value={searchValue}
                 onChange={(e) => setSearchValue(e.target.value)}
+                onKeyUp={e => e.keyCode===13 ? loadFoods() : null}
               />
-              <button
-                onClick={loadFoods}
-              >Pesquiar</button>
+              <button onClick={loadFoods}>
+                <FaSearch size={24} />
+              </button>
+          </div>
+
+          <div className="botao">
+            <button type="button" onClick={toggleModal}>
+              <div className="text">Novo Prato</div>
+              <div className="icon">
+                <FiPlusSquare size={24} />
+              </div>
+            </button>
+          </div>
           </Header>
 
           <Main>
-              {foods.map(food => (
+                {foods.length > 0  ? foods.map(food => (
                   <Food
                     key={food.id}
                   >
@@ -96,10 +169,28 @@ const Dashboard: React.FC = () => {
                       <FoodContent>
                         <FoodTitle>{food.name}</FoodTitle>
                         <FoodDescription>{food.description}</FoodDescription>
-                        <FoodPricing>R$ {food.price}</FoodPricing>
+                        {/* <FoodPricing>{food.formattedPrice}</FoodPricing> */}
+                        <FoodPricing>{food.price}</FoodPricing>
                       </FoodContent>
+                      <div className="icons">
+                        <span className="edit">
+                            <FaEdit 
+                              size={20}
+                              cursor="pointer"
+                              onClick={() => handleEditFood(food)}
+                            />
+                        </span>
+                        <span className="trash">
+                            <FaTrash
+                                cursor="pointer"
+                                onClick={() => handleDeleteFood(food.id)} 
+                            />
+                        </span>
+                      </div>
                   </Food>
-              ))}
+              )) : (
+                  <h1>Not food found! try again</h1>
+              )}
           </Main>
       </Container>
   );
